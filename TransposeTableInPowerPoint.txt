@@ -1,0 +1,85 @@
+Sub CopyTransposeDeleteTable()
+    Dim sld As Slide
+    Dim shp As Shape
+    Dim copiedTable As Shape
+    Dim numRows As Integer
+    Dim numCols As Integer
+    Dim r As Integer
+    Dim c As Integer
+    Dim newText As String
+    Dim i As Integer
+    Dim temp As Integer
+    
+    ' Überprüfen, ob eine Tabelle auf der Folie ausgewählt ist
+    If Not ActiveWindow.Selection.Type = ppSelectionShapes Then
+        MsgBox "Bitte eine Tabelle auf der Folie auswählen.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Folie und Form auswählen
+    Set sld = ActiveWindow.Selection.ShapeRange(1).Parent
+    Set shp = ActiveWindow.Selection.ShapeRange(1)
+    
+    ' Überprüfen, ob das ausgewählte Element eine Tabelle ist
+    If Not shp.HasTable Then
+        MsgBox "Das ausgewählte Element ist keine Tabelle.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Tabelle kopieren und einfügen
+    shp.Copy
+    sld.Shapes.Paste
+    
+    ' Die kopierte Tabelle auswählen (die zuletzt eingefügte Form)
+    Set copiedTable = sld.Shapes(sld.Shapes.Count)
+    
+    ' Position der kopierten Tabelle auf die Position des Originals setzen
+    copiedTable.Left = shp.Left
+    copiedTable.Top = shp.Top
+    
+    ' Anzahl der Zeilen und Spalten in der kopierten Tabelle ermitteln
+    numRows = copiedTable.Table.Rows.Count
+    numCols = copiedTable.Table.Columns.Count
+    
+    ' Neue Werte für Zeilen und Spalten festlegen
+    ' Hier wird die Anzahl der Zeilen auf die Anzahl der Spalten und umgekehrt gesetzt
+    temp = numRows
+    numRows = numCols
+    numCols = temp
+    
+    ' Überprüfen, ob Zeilen hinzugefügt oder gelöscht werden müssen
+    If numRows > copiedTable.Table.Rows.Count Then
+        For i = 1 To numRows - copiedTable.Table.Rows.Count
+            copiedTable.Table.Rows.Add
+        Next i
+    ElseIf numRows < copiedTable.Table.Rows.Count Then
+        For i = 1 To copiedTable.Table.Rows.Count - numRows
+            copiedTable.Table.Rows(copiedTable.Table.Rows.Count).Delete
+        Next i
+    End If
+    
+    ' Überprüfen, ob Spalten hinzugefügt oder gelöscht werden müssen
+    If numCols > copiedTable.Table.Columns.Count Then
+        For i = 1 To numCols - copiedTable.Table.Columns.Count
+            copiedTable.Table.Columns.Add
+        Next i
+    ElseIf numCols < copiedTable.Table.Columns.Count Then
+        For i = 1 To copiedTable.Table.Columns.Count - numCols
+            copiedTable.Table.Columns(copiedTable.Table.Columns.Count).Delete
+        Next i
+    End If
+
+    ' Tabelle transponieren
+    For r = 1 To numRows
+        For c = 1 To numCols
+            ' Den Text in der ursprünglichen Zelle ermitteln
+            newText = shp.Table.cell(c, r).Shape.TextFrame.TextRange.Text
+            ' Den Text in die transponierte Zelle der Kopie einfügen
+            copiedTable.Table.cell(r, c).Shape.TextFrame.TextRange.Text = newText
+        Next c
+    Next r
+    
+    ' Originaltabelle löschen
+    shp.Delete
+End Sub
+
